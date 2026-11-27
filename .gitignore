@@ -1,0 +1,7 @@
+# Raw data is downloaded by src/download_data.py; the cleaned data (data/processed) is committed
+data/raw/
+# Personal drafts, not part of the project
+essay/
+__pycache__/
+.ipynb_checkpoints/
+.venv/
