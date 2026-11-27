@@ -1,70 +1,71 @@
-# Used Car Prices: Separating the Effects of Age and Mileage
+# Vehicle Age, Mileage, and UK Used-Car Asking Prices
 
-A regression analysis of about 96,000 UK used car listings, asking **how a car's age and mileage affect its price**.
-Age and total mileage move together (correlation 0.75), which makes their effects hard to separate (multicollinearity).
-Using **annual mileage instead of total mileage** makes the two variables nearly independent (correlation 0.14, VIF 2.3 → 1.0), so the effect of age can be estimated cleanly.
+A regression analysis of **96,255 UK used-car listings across nine brands**. It asks how the estimated relationship between vehicle age and asking price changes when we compare cars at the same total mileage or at the same estimated annual mileage.
 
-## Key result
+[Regression notebook](notebooks/03_regression.ipynb) · [Results CSV](figures/regression_summary.csv) · [Data dictionary](data/README.md) · [Reproduce the results](#reproduce-the-results)
 
-> Holding annual mileage and brand constant, **each additional year of age lowers a car's price by about 13.5%** (95% CI: −13.7% to −13.4%).
+## Main findings
 
-| Model | Explanatory variables | Per year of age | Per 1,000 miles | R² |
-|---|---|---|---|---|
-| M1 | Total mileage | – | −1.23% | 0.24 |
-| M2 | Age | −14.2% | – | 0.36 |
-| M3 | Total mileage + age | −12.9% | −0.20% | 0.36 |
-| M4 | Total mileage + age + brand | −11.3% | −0.38% | 0.68 |
-| **M5** | **Annual mileage + age + brand** | **−13.5%** | **−1.06% (annual)** | **0.67** |
-| M6 | M5 + car model, transmission, fuel, engine size | −12.7% | −1.53% (annual) | 0.94 |
+Within the same brand, vehicles one year older had estimated asking prices **11.32% lower at the same total mileage** and **13.55% lower at the same estimated annual mileage**.
 
-The dependent variable is `log(price)`; each coefficient β is converted to a `(e^β − 1) × 100` percent change. Standard errors are heteroskedasticity-robust (HC3).
+| Model | Mileage held constant | Estimated asking-price difference for one additional year of age | 95% CI |
+| --- | --- | ---: | ---: |
+| M4 | Total mileage | −11.32% | −11.50% to −11.14% |
+| M5 | Estimated annual mileage | −13.55% | −13.66% to −13.43% |
 
-![age effect](figures/04_age_effect_by_model.png)
-![age vs mileage](figures/03_age_vs_mileage.png)
+![Dot plot of age coefficients and 95% confidence intervals for five regression models. The estimates range from 11.3% to 14.2% lower asking prices for vehicles one year older.](figures/04_age_effect_by_model.png)
 
-## Steps
+The two mileage measures describe different comparisons. A three-year-old car and a five-year-old car at 8,000 miles per year have 24,000 and 40,000 total miles, respectively. Holding annual mileage constant compares usage intensity, while holding total mileage constant compares cars with the same accumulated mileage. In this sample, age correlated **0.75** with total mileage and **0.14** with estimated annual mileage. [See the mileage comparison](figures/03_age_vs_mileage.png).
 
-1. **[01_cleaning](notebooks/01_cleaning.ipynb)**: combine the 9 brand files; remove duplicates, typos (such as a model year of 2060) and extreme values (99,187 → 96,255 rows); create derived variables
-   - `age = 2020 − year`, `annual_mileage = mileage / max(age, 1)`, `log_price = ln(price)`
-2. **[02_eda](notebooks/02_eda.ipynb)**: distributions, price against age and mileage, and the correlation of age with total vs. annual mileage
-3. **[03_regression](notebooks/03_regression.ipynb)**: compare models M1–M6, VIF diagnostics, robustness checks by brand
+## Data and methods
 
-## What I learned
+- **Sample.** The analysis combines nine brand files from Aditya Desai’s [100,000 UK Used Car Data Set](https://www.kaggle.com/adityadesai13/used-car-dataset-ford-and-mercedes), listed on Kaggle as **CC0: Public Domain**. Cleaning reduced 99,187 rows to 96,255. The [data dictionary](data/README.md) records the fields, units, and sample counts.
+- **Measures.** Vehicle age is calculated as `2020 − year`. Estimated annual mileage is total mileage divided by `max(age, 1)`. Asking price is recorded in GBP and modeled on the natural-log scale.
+- **Estimation.** Six OLS models compare mileage, age, and vehicle characteristics. Coefficients are converted to percentage differences using `100 × (exp(β) − 1)`. The confidence intervals use HC3 heteroskedasticity-robust standard errors. The [regression notebook](notebooks/03_regression.ipynb) contains the formulas and diagnostics.
 
-- **Multicollinearity:** When age and total mileage are both in the model, they split the information they share. The mileage coefficient shrinks from −1.2% to −0.2% per 1,000 miles: on its own, mileage was also picking up part of the effect of age. The VIF here is about 2.3, which is not severe, but it makes the coefficients hard to read as "the effect with everything else held constant".
-- **Redefining a variable:** Replacing total mileage with annual mileage (how intensively the car was used) splits the question into two distinct ones: how old is the car, and how heavily was it driven.
-- **Log transformation:** Using `log(price)` lets coefficients be read as percent changes and reduces the right skew of the price distribution.
-- **Robustness:** Adding controls such as car model, or estimating each brand separately, keeps the age effect within 10–16% per year.
+## Sensitivity and scope
 
-## Limitations
+| Specification or sample | Estimated asking-price difference for one additional year of age |
+| --- | ---: |
+| M5, all 96,255 listings | −13.55% |
+| M5, age at least one year (92,343 listings) | −13.58% |
+| M5, age at least two years (66,570 listings) | −12.25% |
+| M6, controls for vehicle model, transmission, fuel type, and engine size | −12.67% |
 
-- This is observational data, so the estimates are conditional associations, not causal effects.
-- There is no information on accident history, condition, options or region of sale.
-- The data covers the 2020 UK market and mostly cars aged 0–7 years, so the results may not generalize to older cars or other markets.
+The first restricted sample checks the treatment of vehicles assigned age zero. The second checks how the estimate changes when the sample excludes the two youngest age groups. M6 has an in-sample `R²` of 0.938. [See the brand-by-brand estimates](figures/05_age_effect_by_brand.png).
 
-## Data
+The estimates compare different vehicles in a cross-section of listings and describe conditional associations. The data record asking prices and do not track individual vehicles over time. Vehicle condition, accident history, options, and sale region are unavailable. About 98% of the sample is zero to seven years old.
 
-Kaggle: [100,000 UK Used Car Data set](https://www.kaggle.com/datasets/adityadesai13/used-car-dataset-ford-and-mercedes) (Aditya Desai).
+## Reproduce the results
 
-- **Cleaned data** (96,255 rows, with derived variables) is included at [`data/processed/cars_clean.csv`](data/processed/cars_clean.csv), so the EDA and regression notebooks can be run directly.
-- The raw data is not included; `src/download_data.py` downloads it, and `notebooks/01_cleaning.ipynb` rebuilds the cleaned file from it.
-
-## How to run
+Use Python 3.12 in a virtual environment and run the commands from the repository root.
 
 ```bash
-pip install -r requirements.txt
-python src/download_data.py        # saves the raw CSV files to data/raw (no login needed)
-jupyter nbconvert --to notebook --execute --inplace notebooks/*.ipynb
+python -m pip install -r requirements.txt
 ```
 
-## Structure
+**Using the included analysis data**
 
+```bash
+jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=600 notebooks/02_eda.ipynb notebooks/03_regression.ipynb
 ```
-├── data/processed/        # cleaned data (cars_clean.csv)
-├── src/
-│   ├── features.py        # loading, cleaning, derived variables
-│   └── download_data.py   # downloads the Kaggle dataset
-├── notebooks/             # 01 cleaning → 02 EDA → 03 regression
-├── figures/               # charts and regression summary table
-└── requirements.txt
+
+**Starting with the Kaggle data**
+
+```bash
+python src/download_data.py
+jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=600 notebooks/01_cleaning.ipynb notebooks/02_eda.ipynb notebooks/03_regression.ipynb
 ```
+
+The commands update the executed notebooks and regenerate the corresponding figures and tables. The full workflow also rebuilds `data/processed/cars_clean.csv`.
+
+## Repository guide
+
+| Location | What it contains |
+| --- | --- |
+| [`notebooks/01_cleaning.ipynb`](notebooks/01_cleaning.ipynb) | Source files, cleaning decisions, and row counts |
+| [`notebooks/02_eda.ipynb`](notebooks/02_eda.ipynb) | Distributions, scatterplots, and correlations |
+| [`notebooks/03_regression.ipynb`](notebooks/03_regression.ipynb) | Models, confidence intervals, and sensitivity checks |
+| [`data/`](data/README.md) | Data provenance, dictionary, and analysis-ready CSV |
+| [`figures/`](figures/) | Figures and the regression summary CSV |
+| [`src/`](src/) | Data retrieval, cleaning, and variable definitions |
