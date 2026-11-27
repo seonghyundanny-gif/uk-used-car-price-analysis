@@ -15,7 +15,11 @@ Within the same brand, vehicles one year older had estimated asking prices **11.
 
 ![Dot plot of age coefficients and 95% confidence intervals for five regression models. The estimates range from 11.3% to 14.2% lower asking prices for vehicles one year older.](figures/04_age_effect_by_model.png)
 
-The two mileage measures describe different comparisons. A three-year-old car and a five-year-old car at 8,000 miles per year have 24,000 and 40,000 total miles, respectively. Holding annual mileage constant compares usage intensity, while holding total mileage constant compares cars with the same accumulated mileage. In this sample, age correlated **0.75** with total mileage and **0.14** with estimated annual mileage. [See the mileage comparison](figures/03_age_vs_mileage.png).
+The two mileage measures describe different comparisons. A three-year-old car and a five-year-old car at 8,000 miles per year have 24,000 and 40,000 total miles, respectively. Holding annual mileage constant compares usage intensity, while holding total mileage constant compares cars with the same accumulated mileage.
+
+### Multicollinearity
+
+Vehicle age and total mileage tend to move together. This overlap between predictors, called **multicollinearity**, can make their individual regression coefficients less precise. The correlation with age was **0.75** for total mileage and **0.14** for estimated annual mileage. In a diagnostic using each age–mileage pair alone, the variance inflation factor (VIF) was **2.305** with total mileage and **1.020** with estimated annual mileage. The lower VIF reflects less overlap between age and the annual mileage measure. [Mileage comparison](figures/03_age_vs_mileage.png) · [VIF calculations](notebooks/03_regression.ipynb)
 
 ## Data and methods
 
